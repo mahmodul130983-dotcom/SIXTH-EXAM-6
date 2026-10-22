@@ -3,172 +3,363 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Admin Dashboard - Student Results</title>
+  <title> Exam Results Dashboard</title>
   
+  <!-- Google Fonts & Font Awesome Icons -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
   <!-- Firebase SDK -->
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
   <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-firestore-compat.js"></script>
 
   <style>
     :root {
-      --primary-color: #4f46e5;
-      --bg-color: #f8fafc;
-      --card-bg: #ffffff;
-      --text-main: #0f172a;
-      --text-muted: #64748b;
-      --border-color: #e2e8f0;
+      --primary: #6366f1;
+      --primary-hover: #4f46e5;
+      --secondary: #ec4899;
+      --bg-gradient: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #311042 100%);
+      --card-bg: rgba(255, 255, 255, 0.06);
+      --card-border: rgba(255, 255, 255, 0.12);
+      --text-main: #f8fafc;
+      --text-muted: #94a3b8;
+      
+      --correct-text: #4ade80;
+      --wrong-text: #f87171;
+      --skipped-text: #fbbf24;
+
+      --glass-shadow: 0 20px 50px rgba(0, 0, 0, 0.45);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: 'Hind Siliguri', 'Outfit', sans-serif;
     }
 
     body {
-      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
-      background-color: var(--bg-color);
+      background: var(--bg-gradient);
       color: var(--text-main);
-      padding: 30px 20px;
-      margin: 0;
+      min-height: 100vh;
+      padding: 30px 16px;
+      overflow-x: hidden;
+    }
+
+    /* Ambient Floating Background Effects */
+    .ambient-bg {
+      position: fixed;
+      width: 100vw;
+      height: 100vh;
+      top: 0;
+      left: 0;
+      z-index: -1;
+      overflow: hidden;
+      pointer-events: none;
+    }
+
+    .circle-1, .circle-2 {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(120px);
+      opacity: 0.3;
+      animation: float 12s infinite alternate ease-in-out;
+    }
+
+    .circle-1 {
+      width: 450px;
+      height: 450px;
+      background: #4f46e5;
+      top: -100px;
+      left: -100px;
+    }
+
+    .circle-2 {
+      width: 500px;
+      height: 500px;
+      background: #db2777;
+      bottom: -150px;
+      right: -100px;
+      animation-delay: -6s;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(50px, 60px) scale(1.1); }
     }
 
     .container {
-      max-width: 950px;
+      max-width: 1050px;
       margin: 0 auto;
     }
 
-    .header-title {
+    /* Header Section */
+    .header-panel {
       text-align: center;
-      margin-bottom: 25px;
+      margin-bottom: 30px;
     }
 
-    .header-title h1 {
-      font-size: 28px;
+    .badge-tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(99, 102, 241, 0.2);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
+      padding: 6px 18px;
+      border-radius: 30px;
+      font-size: 14px;
+      font-weight: 600;
+      margin-bottom: 12px;
+    }
+
+    .header-panel h1 {
+      font-size: 32px;
       font-weight: 800;
-      color: var(--primary-color);
-      margin: 0 0 5px 0;
-      letter-spacing: -0.5px;
+      background: linear-gradient(to right, #ffffff, #c7d2fe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 6px;
     }
 
-    .header-title p {
+    .header-panel p {
       color: var(--text-muted);
-      margin: 0;
       font-size: 15px;
     }
 
-    /* 📊 Analytics Cards */
-    .summary-grid {
+    /* Summary Analytics Cards */
+    .analytics-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-      gap: 15px;
-      margin-bottom: 25px;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 28px;
     }
 
     .stat-card {
       background: var(--card-bg);
-      padding: 16px 20px;
-      border-radius: 12px;
-      border: 1px solid var(--border-color);
-      box-shadow: 0 2px 4px rgba(0,0,0,0.02);
-      text-align: center;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      padding: 20px;
+      border-radius: 18px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      transition: transform 0.2s;
     }
 
-    .stat-card h3 {
+    .stat-card:hover {
+      transform: translateY(-3px);
+    }
+
+    .stat-icon {
+      width: 50px;
+      height: 50px;
+      border-radius: 14px;
+      background: rgba(99, 102, 241, 0.15);
+      border: 1px solid rgba(99, 102, 241, 0.3);
+      color: #818cf8;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 22px;
+    }
+
+    .stat-info h3 {
       font-size: 13px;
       color: var(--text-muted);
       text-transform: uppercase;
-      margin: 0 0 6px 0;
       letter-spacing: 0.5px;
+      margin-bottom: 4px;
     }
 
-    .stat-card .value {
-      font-size: 24px;
+    .stat-info .value {
+      font-size: 26px;
       font-weight: 800;
-      color: var(--primary-color);
+      color: #ffffff;
     }
 
-    /* 🔍 Search Input */
-    .search-box {
-      margin-bottom: 20px;
-    }
-
-    .search-box input {
-      width: 100%;
-      padding: 14px 18px;
-      font-size: 15px;
-      border: 2px solid var(--border-color);
-      border-radius: 10px;
-      outline: none;
-      transition: all 0.2s ease;
-      background: #ffffff;
-      box-sizing: border-box;
-    }
-
-    .search-box input:focus {
-      border-color: var(--primary-color);
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
-    }
-
-    /* 📄 Result Cards */
-    .card {
+    /* Control Toolbar (Search, Select All, Bulk Delete) */
+    .toolbar-card {
       background: var(--card-bg);
-      border-radius: 14px;
-      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
-      padding: 22px;
-      margin-bottom: 20px;
-      border: 1px solid var(--border-color);
-      transition: transform 0.2s ease, box-shadow 0.2s ease;
-    }
-
-    .card:hover {
-      transform: translateY(-2px);
-      box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
-    }
-
-    .card-header {
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 24px;
       display: flex;
       justify-content: space-between;
       align-items: center;
-      border-bottom: 2px solid #f1f5f9;
-      padding-bottom: 12px;
-      margin-bottom: 15px;
+      flex-wrap: wrap;
+      gap: 14px;
+    }
+
+    .search-input-wrapper {
+      position: relative;
+      flex: 1;
+      min-width: 260px;
+    }
+
+    .search-input-wrapper i {
+      position: absolute;
+      left: 16px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--text-muted);
+    }
+
+    .search-input {
+      width: 100%;
+      padding: 12px 16px 12px 46px;
+      font-size: 15px;
+      color: var(--text-main);
+      background: rgba(15, 23, 42, 0.6);
+      border: 1.5px solid var(--card-border);
+      border-radius: 12px;
+      outline: none;
+      transition: all 0.2s;
+    }
+
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 15px rgba(99, 102, 241, 0.25);
+    }
+
+    .toolbar-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .select-all-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      padding: 8px 12px;
+      border-radius: 8px;
+      background: rgba(255, 255, 255, 0.04);
+      border: 1px solid var(--card-border);
+    }
+
+    .btn-delete-bulk {
+      background: rgba(239, 68, 68, 0.2);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      color: #f87171;
+      padding: 10px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      border-radius: 12px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: all 0.2s;
+    }
+
+    .btn-delete-bulk:hover:not(:disabled) {
+      background: rgba(239, 68, 68, 0.35);
+      transform: translateY(-1px);
+    }
+
+    .btn-delete-bulk:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    /* Result Student Card */
+    .result-card {
+      background: var(--card-bg);
+      backdrop-filter: blur(20px);
+      border: 1px solid var(--card-border);
+      border-radius: 20px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: all 0.3s ease;
+      position: relative;
+    }
+
+    .result-card:hover {
+      border-color: rgba(99, 102, 241, 0.3);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    }
+
+    .card-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      padding-bottom: 14px;
+      margin-bottom: 16px;
+    }
+
+    .student-meta {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .custom-checkbox {
+      width: 20px;
+      height: 20px;
+      accent-color: var(--primary);
+      cursor: pointer;
     }
 
     .student-name {
-      font-size: 18px;
+      font-size: 20px;
       font-weight: 700;
-      color: #1e293b;
+      color: #ffffff;
     }
 
     .score-badge {
-      background: #e0e7ff;
-      color: var(--primary-color);
+      background: linear-gradient(135deg, rgba(99, 102, 241, 0.2) 0%, rgba(236, 72, 153, 0.2) 100%);
+      border: 1px solid rgba(99, 102, 241, 0.4);
+      color: #a5b4fc;
       padding: 6px 16px;
-      border-radius: 20px;
+      border-radius: 30px;
       font-weight: 800;
-      font-size: 15px;
+      font-size: 16px;
     }
 
-    .stats {
+    .stats-row {
       display: flex;
       gap: 20px;
       font-size: 14px;
+      background: rgba(15, 23, 42, 0.4);
+      padding: 12px 18px;
+      border-radius: 12px;
       margin-bottom: 18px;
-      background: #f8fafc;
-      padding: 10px 14px;
-      border-radius: 8px;
+      flex-wrap: wrap;
     }
 
-    .wrong-sec-title {
-      font-weight: 700;
-      color: #ef4444;
-      margin-bottom: 12px;
-      font-size: 15px;
+    .stats-row span {
       display: flex;
       align-items: center;
       gap: 6px;
     }
 
+    .wrong-sec-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #f87171;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
     .wrong-item {
-      background: #fef2f2;
+      background: rgba(239, 68, 68, 0.08);
       border-left: 4px solid #ef4444;
       padding: 12px 16px;
-      border-radius: 8px;
+      border-radius: 10px;
       margin-bottom: 10px;
       font-size: 14px;
       line-height: 1.5;
@@ -176,23 +367,34 @@
 
     .wrong-item strong {
       display: block;
+      color: #fca5a5;
       margin-bottom: 6px;
-      color: #991b1b;
     }
 
-    .selected-ans {
-      color: #dc2626;
-      font-weight: 600;
+    .card-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 14px;
     }
 
-    .correct-ans {
-      color: #16a34a;
-      font-weight: 600;
+    .single-delete-btn {
+      background: transparent;
+      border: 1px solid rgba(239, 68, 68, 0.3);
+      color: #f87171;
+      padding: 6px 14px;
+      font-size: 13px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .single-delete-btn:hover {
+      background: rgba(239, 68, 68, 0.2);
     }
 
     .loader {
       text-align: center;
-      padding: 40px;
+      padding: 50px;
       font-size: 16px;
       color: var(--text-muted);
     }
@@ -200,41 +402,79 @@
 </head>
 <body>
 
+  <!-- Background Ambient Lights -->
+  <div class="ambient-bg">
+    <div class="circle-1"></div>
+    <div class="circle-2"></div>
+  </div>
+
   <div class="container">
-    <div class="header-title">
-      <h1>SUMU EXAM RESULTS DASHBOARD</h1>
-      <p>MCQ SIXTH EXAM ANALYTICS AND RESULTS</p>
+    
+    <!-- Header -->
+    <div class="header-panel">
+      <div class="badge-tag">
+        <i class="fa-solid fa-shield-halved"></i> ADMIN CONTROL CENTER
+      </div>
+      <h1>EXAM ANALYTICS & RESULTS</h1>
+      <p>MCQ RESULTS SIXTH REVIEW AND ANALYTICS</p>
     </div>
 
-    <!-- 📊 Summary Analytics Section -->
-    <div class="summary-grid">
+    <!-- Live Statistics Cards -->
+    <div class="analytics-grid">
       <div class="stat-card">
-        <h3>total exams</h3>
-        <div class="value" id="total-students">0</div>
+        <div class="stat-icon"><i class="fa-solid fa-users"></i></div>
+        <div class="stat-info">
+          <h3>Total Student</h3>
+          <div class="value" id="total-students">0</div>
+        </div>
       </div>
       <div class="stat-card">
-        <h3>সর্বোচ্চ নম্বর</h3>
-        <div class="value" id="top-score">0</div>
+        <div class="stat-icon" style="color: #4ade80; background: rgba(34, 197, 94, 0.15); border-color: rgba(34, 197, 94, 0.3);"><i class="fa-solid fa-trophy"></i></div>
+        <div class="stat-info">
+          <h3>Highest score</h3>
+          <div class="value" id="top-score">0.00</div>
+        </div>
       </div>
       <div class="stat-card">
-        <h3>গড় নম্বর</h3>
-        <div class="value" id="avg-score">0</div>
+        <div class="stat-icon" style="color: #ec4899; background: rgba(236, 72, 153, 0.15); border-color: rgba(236, 72, 153, 0.3);"><i class="fa-solid fa-chart-line"></i></div>
+        <div class="stat-info">
+          <h3>Avg Number</h3>
+          <div class="value" id="avg-score">0.00</div>
+        </div>
       </div>
     </div>
 
-    <!-- 🔍 Search Bar -->
-    <div class="search-box">
-      <input type="text" id="search-input" placeholder="🔍 Search results by your name..." onkeyup="filterResults()">
+    <!-- Search & Bulk Action Toolbar -->
+    <div class="toolbar-card">
+      <div class="search-input-wrapper">
+        <i class="fa-solid fa-magnifying-glass"></i>
+        <input type="text" id="search-input" class="search-input" placeholder="Search name.." onkeyup="filterResults()">
+      </div>
+
+      <div class="toolbar-actions">
+        <label class="select-all-btn">
+          <input type="checkbox" id="select-all-checkbox" onchange="toggleSelectAll(this)">
+        select all
+        </label>
+
+        <button class="btn-delete-bulk" id="bulk-delete-btn" onclick="deleteSelectedRecords()" disabled>
+          <i class="fa-solid fa-trash-can"></i> delete all selected(<span id="selected-count">0</span>)
+        </button>
+      </div>
     </div>
 
-    <!-- 📄 Results List -->
+    <!-- Results List -->
     <div id="results-container">
-      <div class="loader">ডাটা লোড হচ্ছে, অনুগ্রহ করে অপেক্ষা করুন...</div>
+      <div class="loader">
+        <i class="fa-solid fa-circle-notch fa-spin fa-2x" style="color: var(--primary); margin-bottom: 12px; display: block;"></i>
+        data loading please wait...
+      </div>
     </div>
+
   </div>
 
   <script>
-    // ⚙️ আপনার আসল ফায়ারবেজ কনফিগারেশন
+    // ⚙️ Firebase Configuration
     const firebaseConfig = {
       apiKey: "AIzaSyCTgSqtcDRtvfbIECDFEv_2jAEgModArXc",
       authDomain: "gk-exam-2.firebaseapp.com",
@@ -248,37 +488,58 @@
     const db = firebase.firestore();
 
     const resultsContainer = document.getElementById('results-container');
+    const bulkDeleteBtn = document.getElementById('bulk-delete-btn');
+    const selectedCountSpan = document.getElementById('selected-count');
+
     let allExamData = [];
+    let selectedDocIds = new Set();
 
-    // ফায়ারবেজ থেকে ডাটা নিয়ে আসা
-    db.collection("quiz_results 6").orderBy("time", "desc").get()
-    .then((querySnapshot) => {
-      if (querySnapshot.empty) {
-        resultsContainer.innerHTML = '<p style="text-align:center; padding: 40px; color: var(--text-muted);">এখনও কেউ পরীক্ষা দেয়নি।</p>';
-        return;
-      }
+    // Fetch All Exam Data from Firestore Collection "quiz_results 6"
+    function fetchResults() {
+      db.collection("quiz_results 6").orderBy("submittedAt", "desc").get()
+      .then((querySnapshot) => {
+        if (querySnapshot.empty) {
+          // Fallback if submittedAt doesn't exist on older documents
+          return db.collection("quiz_results 6").get();
+        }
+        return querySnapshot;
+      })
+      .then((querySnapshot) => {
+        allExamData = [];
+        selectedDocIds.clear();
+        updateBulkDeleteButton();
 
-      allExamData = [];
-      querySnapshot.forEach((doc) => {
-        allExamData.push(doc.data());
+        if (querySnapshot.empty) {
+          resultsContainer.innerHTML = '<p style="text-align:center; padding: 50px; color: var(--text-muted);">এখনও কেউ পরীক্ষা দেয়নি বা কোনো রেকর্ড নেই।</p>';
+          calculateAnalytics([]);
+          return;
+        }
+
+        querySnapshot.forEach((doc) => {
+          allExamData.push({ id: doc.id, ...doc.data() });
+        });
+
+        calculateAnalytics(allExamData);
+        renderResults(allExamData);
+      })
+      .catch((error) => {
+        console.error("ডাটা লোড করতে সমস্যা হয়েছে: ", error);
+        resultsContainer.innerHTML = '<p style="color:#f87171; text-align:center; padding: 40px;">ডাটা লোড করতে সমস্যা হয়েছে। ফায়ারবেজ কানেকশন চেক করুন।</p>';
       });
+    }
 
-      calculateAnalytics(allExamData);
-      renderResults(allExamData);
-    })
-    .catch((error) => {
-      console.error("ডাটা আনতে সমস্যা হয়েছে: ", error);
-      resultsContainer.innerHTML = '<p style="color:#ef4444; text-align:center; padding: 30px;">ডাটা লোড করতে সমস্যা হয়েছে। Firebase Rules বা Config চেক করুন।</p>';
-    });
-
-    // 📊 অ্যানালিটিক্স হিসেব করা
+    // Analytics Calculation
     function calculateAnalytics(dataList) {
       const total = dataList.length;
       document.getElementById('total-students').innerText = total;
 
-      if (total === 0) return;
+      if (total === 0) {
+        document.getElementById('top-score').innerText = "0.00";
+        document.getElementById('avg-score').innerText = "0.00";
+        return;
+      }
 
-      const scores = dataList.map(item => parseFloat(item.score) || 0);
+      const scores = dataList.map(item => parseFloat(item.totalScore || item.score) || 0);
       const maxScore = Math.max(...scores);
       const sumScore = scores.reduce((a, b) => a + b, 0);
       const avgScore = (sumScore / total).toFixed(2);
@@ -287,44 +548,73 @@
       document.getElementById('avg-score').innerText = avgScore;
     }
 
-    // 📄 কার্ডগুলো রেন্ডার করা
+    // Render Student Cards
     function renderResults(dataList) {
       resultsContainer.innerHTML = '';
 
-      if(dataList.length === 0) {
-        resultsContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 20px;">কোনো রেজাল্ট পাওয়া যায়নি!</p>';
+      if (dataList.length === 0) {
+        resultsContainer.innerHTML = '<p style="text-align:center; color: var(--text-muted); padding: 30px;">কোনো ফলাফল পাওয়া যায়নি!</p>';
         return;
       }
 
       dataList.forEach((data) => {
         let wrongListHTML = '';
-        if (data.wrongQuestions && data.wrongQuestions.length > 0) {
-          data.wrongQuestions.forEach((item) => {
+        const wrongItems = data.wrongQuestionsBreakdown || data.wrongQuestions || [];
+
+        if (wrongItems.length > 0) {
+          wrongItems.forEach((item) => {
             wrongListHTML += `
               <div class="wrong-item">
-                <strong>${item.question}</strong>
-                <div>ইউজারের উত্তর: <span class="selected-ans">${item.selectedAnswer}</span></div>
-                <div>সঠিক উত্তর: <span class="correct-ans">${item.correctAnswer}</span></div>
+                <strong>${item.questionText || item.question}</strong>
+                <div>ইউজারের উত্তর: <span style="color: var(--wrong-text); font-weight:600;">${item.givenAnswer || item.selectedAnswer}</span></div>
+                <div>সঠিক উত্তর: <span style="color: var(--correct-text); font-weight:600;">${item.correctAnswer}</span></div>
               </div>
             `;
           });
         } else {
-          wrongListHTML = '<p style="color:#16a34a; font-weight:600; margin: 5px 0;">🎉 কোনো প্রশ্ন ভুল করেনি! (সবগুলো সঠিক)</p>';
+          wrongListHTML = '<p style="color:var(--correct-text); font-weight:600; margin: 6px 0;"><i class="fa-solid fa-circle-check"></i> চমৎকার! কোনো প্রশ্ন ভুল করেনি (সব সঠিক)</p>';
+        }
+
+        const isChecked = selectedDocIds.has(data.id) ? 'checked' : '';
+        const studentName = data.studentName || data.name || 'Unknown student';
+        const finalScore = data.totalScore || data.score || '০.০০';
+        const correctCount = data.correctAnswers !== undefined ? data.correctAnswers : (data.correct || 0);
+        const wrongCount = data.wrongAnswers !== undefined ? data.wrongAnswers : (data.wrong || 0);
+        const skippedCount = data.skippedQuestions !== undefined ? data.skippedQuestions : (data.skipped || 0);
+        
+        // Date formatting
+        let displayDate = 'N/A';
+        if (data.submittedAt) {
+          displayDate = new Date(data.submittedAt).toLocaleString('bn-BD');
+        } else if (data.time) {
+          displayDate = new Date(data.time.toDate()).toLocaleString('bn-BD');
         }
 
         const cardHTML = `
-          <div class="card">
-            <div class="card-header">
-              <div class="student-name">👤 শিক্ষার্থী: ${data.name}</div>
-              <div class="score-badge">স্কোর: ${data.score}</div>
+          <div class="result-card">
+            <div class="card-top">
+              <div class="student-meta">
+                <input type="checkbox" class="custom-checkbox item-checkbox" value="${data.id}" ${isChecked} onchange="toggleSelectDoc('${data.id}', this.checked)">
+                <div class="student-name"><i class="fa-solid fa-user-graduate" style="color:#818cf8; font-size: 16px; margin-right: 6px;"></i> ${studentName}</div>
+              </div>
+              <div class="score-badge">স্কোর: ${finalScore}</div>
             </div>
-            <div class="stats">
-              <span>সঠিক: <strong style="color:#16a34a;">${data.correct}</strong></span>
-              <span>ভুল: <strong style="color:#dc2626;">${data.wrong}</strong></span>
-              <span>তারিখ: ${data.time ? new Date(data.time.toDate()).toLocaleString('bn-BD') : 'N/A'}</span>
+
+            <div class="stats-row">
+              <span><i class="fa-solid fa-circle-check" style="color:var(--correct-text);"></i> Right: <strong>${correctCount}</strong></span>
+              <span><i class="fa-solid fa-circle-xmark" style="color:var(--wrong-text);"></i> Wrong: <strong>${wrongCount}</strong></span>
+              <span><i class="fa-solid fa-forward" style="color:var(--skipped-text);"></i> Skip: <strong>${skippedCount}</strong></span>
+              <span><i class="fa-regular fa-clock" style="color:var(--text-muted);"></i> ${displayDate}</span>
             </div>
-            <div class="wrong-sec-title">⚠️ ভুল করা প্রশ্নের তালিকা:</div>
+
+            <div class="wrong-sec-title"><i class="fa-solid fa-triangle-exclamation"></i> Wrong answer list:</div>
             ${wrongListHTML}
+
+            <div class="card-actions">
+              <button class="single-delete-btn" onclick="deleteSingleRecord('${data.id}', '${studentName}')">
+                <i class="fa-solid fa-trash"></i> delete
+              </button>
+            </div>
           </div>
         `;
 
@@ -332,14 +622,89 @@
       });
     }
 
-    // 🔍 সার্চ ফিল্টারিং ফাংশন
+    // Select Individual Checkbox
+    function toggleSelectDoc(id, isChecked) {
+      if (isChecked) {
+        selectedDocIds.add(id);
+      } else {
+        selectedDocIds.delete(id);
+      }
+      updateBulkDeleteButton();
+    }
+
+    // Select All Checkboxes
+    function toggleSelectAll(masterCheckbox) {
+      const checkboxes = document.querySelectorAll('.item-checkbox');
+      checkboxes.forEach(cb => {
+        cb.checked = masterCheckbox.checked;
+        if (masterCheckbox.checked) {
+          selectedDocIds.add(cb.value);
+        } else {
+          selectedDocIds.delete(cb.value);
+        }
+      });
+      updateBulkDeleteButton();
+    }
+
+    // Update Toolbar Delete Button State
+    function updateBulkDeleteButton() {
+      const count = selectedDocIds.size;
+      selectedCountSpan.innerText = count;
+      bulkDeleteBtn.disabled = count === 0;
+      
+      const selectAllCb = document.getElementById('select-all-checkbox');
+      const allCheckboxes = document.querySelectorAll('.item-checkbox');
+      if (allCheckboxes.length > 0 && count === allCheckboxes.length) {
+        selectAllCb.checked = true;
+      } else {
+        selectAllCb.checked = false;
+      }
+    }
+
+    // Delete Single Record
+    function deleteSingleRecord(docId, studentName) {
+      if (confirm(`do you want'${studentName}'-to delete this quiz??`)) {
+        db.collection("quiz_results 6").doc(docId).delete()
+        .then(() => {
+          fetchResults();
+        })
+        .catch(err => console.error("ডিলিট করতে সমস্যা হয়েছে: ", err));
+      }
+    }
+
+    // Delete Selected Records in Bulk
+    function deleteSelectedRecords() {
+      const count = selectedDocIds.size;
+      if (count === 0) return;
+
+      if (confirm(`do you want ${count}to delete this?`)) {
+        const batch = db.batch();
+        selectedDocIds.forEach(id => {
+          const docRef = db.collection("quiz_results 7").doc(id);
+          batch.delete(docRef);
+        });
+
+        batch.commit()
+        .then(() => {
+          alert(`${count}টি রেকর্ড সফলভাবে মুছে ফেলা হয়েছে!`);
+          fetchResults();
+        })
+        .catch(err => console.error("বাল্ক ডিলিট করতে সমস্যা হয়েছে: ", err));
+      }
+    }
+
+    // Search Filter
     function filterResults() {
       const query = document.getElementById('search-input').value.toLowerCase().trim();
-      const filtered = allExamData.filter(student => 
-        student.name.toLowerCase().includes(query)
-      );
+      const filtered = allExamData.filter(student => {
+        const name = (student.studentName || student.name || '').toLowerCase();
+        return name.includes(query);
+      });
       renderResults(filtered);
     }
+
+    // Initial Load
+    fetchResults();
   </script>
 </body>
 </html>
